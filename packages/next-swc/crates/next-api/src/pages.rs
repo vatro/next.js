@@ -560,6 +560,13 @@ impl PageEndpoint {
 
         let client_entry_chunk = client_module.as_root_chunk(Vc::upcast(client_chunking_context));
 
+        create_react_lodable_manifest(
+            Vc::upcast(client_main_module),
+            client_chunking_context,
+            this.pages_project.project().project_path(),
+        )
+        .await?;
+
         let mut client_chunks = client_chunking_context
             .evaluated_chunk_group(
                 client_entry_chunk,
@@ -614,7 +621,12 @@ impl PageEndpoint {
                 config.runtime,
             );
 
-            create_react_lodable_manifest(ssr_module).await?;
+            create_react_lodable_manifest(
+                ssr_module,
+                edge_chunking_context,
+                this.pages_project.project().client_root(),
+            )
+            .await?;
 
             let mut evaluatable_assets = edge_runtime_entries.await?.clone_value();
             let Some(evaluatable) = Vc::try_resolve_sidecast(ssr_module).await? else {
@@ -639,7 +651,13 @@ impl PageEndpoint {
                 config.runtime,
             );
 
-            create_react_lodable_manifest(ssr_module).await?;
+            // TODO: This should be higher level instead of chunk entry?
+            create_react_lodable_manifest(
+                ssr_module,
+                edge_chunking_context,
+                this.pages_project.project().client_root(),
+            )
+            .await?;
 
             let asset_path = get_asset_path_from_pathname(&this.pathname.await?, ".js");
 
@@ -818,8 +836,6 @@ impl PageEndpoint {
 
                 let node_root = this.pages_project.project().node_root();
 
-                //create_react_lodable_manifest2(entry).await?;
-
                 let mut lodable_manifest: HashMap<String, LodableManifest> = Default::default();
                 lodable_manifest.insert("dummy_page_node".to_string(), LodableManifest::default());
 
@@ -903,7 +919,6 @@ impl PageEndpoint {
                 ));
                 server_assets.push(middleware_manifest_v2);
 
-                //create_react_lodable_manifest2(entry).await?;
                 let mut lodable_manifest: HashMap<String, LodableManifest> = Default::default();
                 lodable_manifest.insert("dummy_page_edge".to_string(), LodableManifest::default());
 

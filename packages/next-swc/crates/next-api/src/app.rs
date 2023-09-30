@@ -48,10 +48,11 @@ use turbopack_binding::{
             output::{OutputAsset, OutputAssets},
             virtual_output::VirtualOutputAsset,
         },
+        ecmascript::chunk::{EcmascriptChunkPlaceable, EcmascriptChunkingContext},
         turbopack::{
             module_options::ModuleOptionsContext, resolve_options_context::ResolveOptionsContext,
             transition::ContextTransition, ModuleAssetContext,
-        }, ecmascript::chunk::EcmascriptChunkPlaceable,
+        },
     },
 };
 
@@ -682,8 +683,9 @@ impl AppEndpoint {
             node_root: Vc<FileSystemPath>,
             ty: &'static str,
             pathname: &str,
+            client_chunking_context: Vc<Box<dyn EcmascriptChunkingContext>>,
         ) -> Result<Vc<Box<dyn OutputAsset>>> {
-            create_react_lodable_manifest(entry).await?;
+            create_react_lodable_manifest(entry, client_chunking_context, node_root).await?;
 
             let manifest_path_prefix = get_asset_prefix_from_pathname(pathname);
             let path = node_root.join(format!(
@@ -808,6 +810,7 @@ impl AppEndpoint {
                     node_root,
                     ty,
                     &app_entry.pathname,
+                    this.app_project.project().client_chunking_context(),
                 )
                 .await?;
                 server_assets.push(lodable_manifest_output);
@@ -851,6 +854,7 @@ impl AppEndpoint {
                     node_root,
                     ty,
                     &app_entry.pathname,
+                    this.app_project.project().client_chunking_context(),
                 )
                 .await?;
                 server_assets.push(lodable_manifest_output);
